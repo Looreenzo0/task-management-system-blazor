@@ -1,0 +1,91 @@
+@using TaskManager.Blazor.Models
+@using TaskManager.Blazor.Services
+@inject TaskApiService ApiService
+
+<EditForm Model="taskModel" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mb-3">
+        <label class="form-label">Title</label>
+        <InputText class="form-control" @bind-Value="taskModel.Title" />
+        <ValidationMessage For="() => taskModel.Title" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <InputTextArea class="form-control" @bind-Value="taskModel.Description" />
+        <ValidationMessage For="() => taskModel.Description" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Status</label>
+        <InputSelect class="form-select" @bind-Value="taskModel.Status">
+            @foreach (var status in Enum.GetValues<TaskManager.Blazor.Models.TaskStatus>())
+            {
+                <option value="@status">@status</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="() => taskModel.Status" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Priority</label>
+        <InputSelect class="form-select" @bind-Value="taskModel.Priority">
+            @foreach (var priority in Enum.GetValues<TaskPriority>())
+            {
+                <option value="@priority">@priority</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="() => taskModel.Priority" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Due Date</label>
+        <InputDate class="form-control" @bind-Value="taskModel.DueDate" />
+        <ValidationMessage For="() => taskModel.DueDate" />
+    </div>
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">Save</button>
+        <button type="button" class="btn btn-secondary" @onclick="OnCancelled">Cancel</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public TaskItem? Task { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancelled { get; set; }
+
+    private TaskItem taskModel = new();
+
+    protected override void OnParametersSet()
+    {
+        if (Task != null)
+            taskModel = new TaskItem
+                {
+                    Id = Task.Id,
+                    Title = Task.Title,
+                    Description = Task.Description,
+                    Status = Task.Status,
+                    Priority = Task.Priority,
+                    CreatedDate = Task.CreatedDate,
+                    DueDate = Task.DueDate
+                };
+        else
+            taskModel = new TaskItem
+            {
+                Status = Models.TaskStatus.Todo,
+                Priority = TaskPriority.Medium,
+                CreatedDate = DateTime.Now,
+                DueDate = DateTime.Now 
+            };
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (taskModel.Id == Guid.Empty)
+        {
+            await ApiService.CreateTaskAsync(taskModel);
+        }
+        else
+        {
+            await ApiService.UpdateTaskAsync(taskModel.Id, taskModel);
+        }
+        await OnSaved.InvokeAsync();
+    }
+}

@@ -1,0 +1,40 @@
+@using TaskManager.Blazor.Models
+<div class="card mb-3 border-@GetPriorityColor(Task.Priority)">
+    <div class="card-body">
+        <h5 class="card-title">@Task.Title</h5>
+        <h6 class="card-subtitle mb-2 text-muted">@Task.CreatedDate.ToShortDateString()</h6>
+        <p class="card-text">@Task.Description</p>
+        <span class="badge bg-@GetStatusColor(Task.Status)">@Task.Status</span>
+        <span class="badge bg-@GetPriorityColor(Task.Priority)">@Task.Priority</span>
+        <span class="badge bg-light text-dark">Due: @(Task.DueDate?.ToShortDateString() ?? "-")</span>
+        <div class="mt-2">
+            <button class="btn btn-sm btn-secondary me-1" @onclick="OnEdit">Edit</button>
+            <button class="btn btn-sm btn-danger" @onclick="OnDelete">Delete</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public TaskItem Task { get; set; } = default!;
+    [Parameter] public EventCallback OnEditClicked { get; set; }
+    [Parameter] public EventCallback OnDeleteClicked { get; set; }
+
+    private void OnEdit() => OnEditClicked.InvokeAsync();
+    private void OnDelete() => OnDeleteClicked.InvokeAsync();
+
+    private string GetStatusColor(TaskManager.Blazor.Models.TaskStatus status) => status switch
+    {
+        TaskManager.Blazor.Models.TaskStatus.Todo => "secondary",
+        TaskManager.Blazor.Models.TaskStatus.InProgress => "warning",
+        TaskManager.Blazor.Models.TaskStatus.Done => "success",
+        _ => "light"
+    };
+
+    private string GetPriorityColor(TaskPriority priority) => priority switch
+    {
+        TaskPriority.Low => "info",
+        TaskPriority.Medium => "primary",
+        TaskPriority.High => "danger",
+        _ => "light"
+    };
+}

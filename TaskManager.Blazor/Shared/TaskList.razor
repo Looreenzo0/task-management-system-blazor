@@ -1,0 +1,114 @@
+@using TaskManager.Blazor.Models
+
+<div class="table-responsive">
+  <table class="table table-striped align-middle">
+    <thead>
+        <tr>
+                <th @onclick="() => OnSortClicked(nameof(TaskItem.Title))" style="cursor:pointer">
+                    Title @((MarkupString)SortIndicator(nameof(TaskItem.Title)))
+                </th>
+
+                <th @onclick="() => OnSortClicked(nameof(TaskItem.Status))" style="cursor:pointer">
+                    Status @((MarkupString)SortIndicator(nameof(TaskItem.Status)))
+                </th>
+                <th @onclick="() => OnSortClicked(nameof(TaskItem.Priority))" style="cursor:pointer">
+                    Priority @((MarkupString)SortIndicator(nameof(TaskItem.Priority)))
+                </th>
+                <th @onclick="() => OnSortClicked(nameof(TaskItem.CreatedDate))" style="cursor:pointer">
+                    Created Date @((MarkupString)SortIndicator(nameof(TaskItem.CreatedDate)))
+                </th>
+                <th @onclick="() => OnSortClicked(nameof(TaskItem.DueDate))" style="cursor:pointer">
+                    Due Date @((MarkupString)SortIndicator(nameof(TaskItem.DueDate)))
+                </th>
+
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+            @if (IsLoading)
+            {
+                <tr>
+                    <td colspan="5" class="text-center">
+                        <div class="d-flex justify-content-center align-items-center" style="height: 80px;">
+                            <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        else if (Tasks?.Any() != true)
+        {
+            <tr>
+                <td colspan="5">No tasks found.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var task in Tasks!)
+            {
+                <tr>
+                    <td>@task.Title</td>
+                    <td>
+                        <span class="badge bg-@GetStatusColor(task.Status)">
+                            @task.Status
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-@GetPriorityColor(task.Priority)">
+                            @task.Priority
+                        </span>
+                    </td>
+                    <td>@task.CreatedDate.ToString("MM-dd-yyyy")</td>
+                        <td>@task.DueDate?.ToString("MM-dd-yyyy")</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-1" @onclick="() => OnEdit.InvokeAsync(task)">Edit</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => OnDelete.InvokeAsync(task)">Delete</button>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter] public IEnumerable<TaskItem> Tasks { get; set; } = Enumerable.Empty<TaskItem>();
+    [Parameter] public EventCallback<string> OnSort { get; set; }
+    [Parameter] public string? SortBy { get; set; }
+    [Parameter] public bool SortAsc { get; set; }
+    [Parameter] public EventCallback<TaskItem> OnEdit { get; set; }
+    [Parameter] public EventCallback<TaskItem> OnDelete { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+
+    private async Task OnSortClicked(string column)
+    {
+        await OnSort.InvokeAsync(column);
+    }
+
+    private MarkupString SortIndicator(string columnName)
+    {
+        if (SortBy != columnName)
+            return new MarkupString(string.Empty);
+
+        var arrow = SortAsc ? "▲" : "▼";
+        return new MarkupString($"<span class='text-danger'>^</span>");
+    }
+
+
+    private string GetStatusColor(TaskManager.Blazor.Models.TaskStatus status) => status switch
+    {
+        TaskManager.Blazor.Models.TaskStatus.Todo => "secondary",
+        TaskManager.Blazor.Models.TaskStatus.InProgress => "warning",
+        TaskManager.Blazor.Models.TaskStatus.Done => "success",
+        _ => "light"
+    };
+
+    private string GetPriorityColor(TaskPriority priority) => priority switch
+    {
+        TaskPriority.Low => "info",
+        TaskPriority.Medium => "primary",
+        TaskPriority.High => "danger",
+        _ => "light"
+    };
+}
